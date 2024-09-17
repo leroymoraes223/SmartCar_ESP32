@@ -1,35 +1,26 @@
-var websocketCarInput;
-var webSocketCarInputUrl = "ws://192.168.4.1:80/ws";
+const socket = io('http://192.168.29.175:5000');  // Adjust the port as needed
 
-function initCarInputWebSocket() {
-  websocketCarInput = new WebSocket(webSocketCarInputUrl);
-
-  websocketCarInput.onopen = function(event) {
-    var speedButton = document.getElementById("Speed");
-    sendButtonInput("Speed", speedButton.value);
-  };
-
-  websocketCarInput.onclose = function(event) {
-    setTimeout(initCarInputWebSocket, 2000);
-  };
-
-  websocketCarInput.onmessage = function(event) {};
+function sendPing(){
+    socket.emit("Ping", "Ping");
 }
 
-function sendButtonInput(key, value) {
-  var data = key + "," + value;
-  console.log("Sending: " + data);
-  if (websocketCarInput && websocketCarInput.readyState === WebSocket.OPEN) {
-    websocketCarInput.send(data);
-  } else {
-    console.error("WebSocket is not open. ReadyState: " + websocketCarInput.readyState);
-  }
+function sendButtonInput(directionValue) {
+    console.log('Sending Direction: ' + directionValue);
+    socket.emit("direction", directionValue);
 }
 
-function speedValueDisplay(value){
-  document.getElementById("speedVal").innerText = Math.round((value/255)*100);
-}
+socket.on('response', function(message) {
+    console.log('Received response from server: ' + message);
+});
 
-window.onload = function (){
-initCarInputWebSocket();
-};
+socket.on('connect', function() {
+    console.log('WebSocket connection established');
+});
+
+socket.on('disconnect', function() {
+    console.log('WebSocket connection closed');
+});
+
+socket.on('error', function(error) {
+    console.error('WebSocket error:', error);
+});

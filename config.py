@@ -1,7 +1,9 @@
 import os
 
 class Config:
-    SECRET_KEY = os.urandom(24)
+    SECRET_KEY = 'secret!'
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///site.db'
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
     DEBUG = True
     MAIL_SERVER = 'smtp.example.com'
     MAIL_PORT = 587

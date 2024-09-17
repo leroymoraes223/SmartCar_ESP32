@@ -1,51 +1,63 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
-from app import bcrypt, mail
-from .forms import LoginForm, SignupForm
-from flask_mail import Message
+from flask import Blueprint, render_template, redirect, url_for, flash, session
+from app import bcrypt, db
+from app.models import User
+from app.forms import LoginForm, SignupForm
+from app.decorators import login_required
 
 main_routes = Blueprint('main_routes', __name__)
-
-# Simulated database (replace with actual database model)
-users_db = {}
 
 @main_routes.route('/')
 def index():
     return render_template('index.html')
 
-# Route for the login page
 @main_routes.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
     if form.validate_on_submit():
         email = form.email.data
         password = form.password.data
-        user = users_db.get(email)
-        if user and bcrypt.check_password_hash(user['password'], password):
-            flash('Login successful!', 'success')
-            return redirect(url_for('main_routes.index'))  # Use main_routes.index instead of index
+        user = User.query.filter_by(email=email).first()
+        if user and user.check_password(password):
+            flash('Login successful', 'success')
+            return redirect(url_for('main_routes.index'))  # Redirect to a protected page
         else:
-            flash('Login failed. Check your email and/or password.', 'danger')
+            flash('Invalid email or password', 'danger')
     return render_template('login.html', form=form)
 
-# Route for the signup page
 @main_routes.route('/signup', methods=['GET', 'POST'])
 def signup():
     form = SignupForm()
     if form.validate_on_submit():
         email = form.email.data
         password = form.password.data
-        if email in users_db:
-            flash('Email already registered. Please log in.', 'warning')
-            return redirect(url_for('main_routes.login'))  # Use main_routes.login instead of login
+        confirm_password = form.confirm_password.data
+        
+        if password != confirm_password:
+            flash('Passwords do not match', 'danger')
+            return redirect(url_for('main_routes.signup'))
+
+        # Check if email already exists
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            flash('Email already exists', 'danger')
+            return redirect(url_for('main_routes.signup'))
+
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-        users_db[email] = {'password': hashed_password}
-        msg = Message('Welcome to Smart Car Control System', sender='leroysemailfortesting@email.com', recipients=[email])
-        msg.body = 'Thank you for signing up!'
-        mail.send(msg)
-        flash('Account created successfully! You can now log in.', 'success')
-        return redirect(url_for('main_routes.login'))  # Use main_routes.login instead of login
+        user = User(email=email, password=hashed_password)
+        db.session.add(user)
+        db.session.commit()
+        flash('Account created successfully', 'success')
+        return redirect(url_for('main_routes.login'))
+    
     return render_template('signup.html', form=form)
 
-@main_routes.route('/control')
+@main_routes.route('/control', methods=['GET'])
 def control():
     return render_template('control.html')
+
+
+@main_routes.route('/logout')
+def logout():
+    session.pop('user_id', None)
+    flash('you have been logged out.', 'info')
+    return redirect(url_for('main_routes.login'))
