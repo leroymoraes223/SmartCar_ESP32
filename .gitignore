@@ -4,3 +4,4 @@ app\__pycache__
 src\.vscode
 instance
 .pio
+venv
