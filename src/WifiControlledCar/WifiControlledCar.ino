@@ -30,6 +30,8 @@ void setup() {
     Serial.print(".");
   }
   Serial.println("Connected to WiFi");
+  Serial.println("Local IP Address: ");
+  Serial.println(WiFi.localIP());
   // Start the server
   server.begin();
   Serial.printf("Server listening on port %d\n", serverPort);
@@ -46,7 +48,7 @@ void loop() {
         client.write("ESP32 has Connected!");
         uint8_t buffer[256];
         int len = client.read(buffer, sizeof(buffer) - 1);  // Read data, leave space for null terminator
-        
+
         if (len > 0) {
 
           buffer[len] = '\0';  // Null-terminate the string

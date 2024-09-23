@@ -1,8 +1,4 @@
-const socket = io('http://192.168.29.175:5000');  // Adjust the port as needed
-
-function sendPing(){
-    socket.emit("Ping", "Ping");
-}
+const socket = io('http://192.168.50.151:5000');  // Adjust the port as needed, IP address of the server
 
 function sendButtonInput(directionValue) {
     console.log('Sending Direction: ' + directionValue);

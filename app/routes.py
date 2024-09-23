@@ -3,6 +3,7 @@ from app import bcrypt, db
 from app.models import User
 from app.forms import LoginForm, SignupForm
 from app.decorators import login_required
+from .sockets import connect_to_esp
 
 main_routes = Blueprint('main_routes', __name__)
 
@@ -18,6 +19,7 @@ def login():
         password = form.password.data
         user = User.query.filter_by(email=email).first()
         if user and user.check_password(password):
+            session['user_id'] = user.id  # Set user ID in session
             flash('Login successful', 'success')
             return redirect(url_for('main_routes.index'))  # Redirect to a protected page
         else:
@@ -52,7 +54,9 @@ def signup():
     return render_template('signup.html', form=form)
 
 @main_routes.route('/control', methods=['GET'])
+@login_required
 def control():
+    connect_to_esp()
     return render_template('control.html')
 
 
@@ -61,3 +65,9 @@ def logout():
     session.pop('user_id', None)
     flash('you have been logged out.', 'info')
     return redirect(url_for('main_routes.login'))
+
+@main_routes.route('/dashboard')
+@login_required
+def dashboard():
+    user = User.query.get(session['user_id'])
+    return render_template('dashboard.html', user=user)
